@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<!-- code from https://outflank.nl/blog/2018/08/14/html-smuggling-explained/ -->
+{# templates/index.html #}
+
+<html>
+    <body>
+        <p>Files Reviewed:</p>
+        <ul>
+            {% for file in files %}
+              <li>
+                <em>{{ file }}
+              </li>
+            {% endfor %}
+            </ul>
+        <p>Findings</p>
+        <ul>
+          {% for finding in findings %}
+          <li>
+            <em>{{ finding }}
+          </li>
+        {% endfor %}
+        </ul>
+    </body>
+</html>
