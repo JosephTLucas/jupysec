@@ -13,11 +13,18 @@
             {% endfor %}
             </ul>
         <p>Findings</p>
-        <ul>
+        <table>
+          <tr>
+            <th>Category</th>
+            <th>Source</th>
+            <th>Details</th>
+          </tr>
           {% for finding in findings %}
-          <li>
-            <em>{{ finding }}
-          </li>
+          <tr>
+            <td>{{ finding.category }}</td>
+            <td>{{ finding.file }}</td>
+            <td>{{ finding.details}}</td>
+          </tr>
         {% endfor %}
         </ul>
     </body>
