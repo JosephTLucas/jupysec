@@ -1,19 +1,13 @@
 <!DOCTYPE html>
-<!-- code from https://outflank.nl/blog/2018/08/14/html-smuggling-explained/ -->
 {# templates/index.html #}
 
 <html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="score.css">
+  </head>
     <body>
-        <p>Files Reviewed:</p>
-        <ul>
-            {% for file in files %}
-              <li>
-                <em>{{ file }}
-              </li>
-            {% endfor %}
-            </ul>
-        <p>Findings</p>
-        <table>
+        <h1>Findings</h1>
+        <table class="styled-table">
           <tr>
             <th>Category</th>
             <th>Source</th>
@@ -27,5 +21,6 @@
           </tr>
         {% endfor %}
         </ul>
+        <p>Timestamp: {{ time }}</p>
     </body>
 </html>

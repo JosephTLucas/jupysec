@@ -4,57 +4,114 @@ import itertools
 import os
 from collections import namedtuple
 import sqlite3
+import json
 
-Finding = namedtuple('Finding', ['category', 'file', 'details'])
+Finding = namedtuple("Finding", ["category", "file", "details"])
 
-def check_ipython_startup():
-    category = "Code Execution"
-    details = "Files in this startup directory provide code execution when Jupyter is initiated. Ensure the contents of these files are not malicious."
-    path = subprocess.run(["ipython", "locate"], capture_output=True).stdout.decode().rstrip()
-    files = list(Path(path).rglob("*"))
-    startup_files = [os.listdir(f) for f in files if "startup" in f.name]
-    startup_files = list(itertools.chain(*startup_files))
-    startup_files = list(filter(lambda x: x != "README", startup_files))
-    return [Finding(category, f, details) for f in startup_files]
 
-def get_not_commented(files):
-    category = "Nonstandard Configuration"
-    details = "Uncommented fields in configuration files may enable nonstandard and potentially malicious/vulnerable functionality. \
-    Ensure these configuration values are intentional."
-    findings = list()
-    for file in files:
-        with open(file, "r") as f:
-            lines = f.read().splitlines()
-        lines = filter(lambda x: len(x) > 0, lines)
-        findings.append(list(filter(lambda x: x[0] not in ["#"], lines)))
-    findings = list(itertools.chain(*findings))
-    return [Finding(category, f, details) for f in findings]
+class Rules:
+    def __init__(self):
+        paths = subprocess.run(["jupyter", "--paths"], capture_output=True).stdout
+        paths = paths.decode().splitlines()
+        paths = [x.lstrip() for x in paths]
+        paths.append(
+            subprocess.run(["ipython", "locate"], capture_output=True)
+            .stdout.decode()
+            .rstrip()
+        )
+        paths = set(filter(lambda x: x not in ["config:", "data:", "runtime:"], paths))
+        files = [list(Path(p).rglob("*")) for p in paths]
+        files = list(itertools.chain(*files))
+        target_files = (
+            "jupyter_server_config.py",
+            "jupyter_notebook_config.py",
+            "ipython_config.py",
+            "jupyter_server_config.json",
+            "jupyter_notebook_config.json",
+        )
+        self.files = list(filter(lambda x: x.name.endswith(target_files), files))
+        self.servers = servers = (
+            subprocess.run(["jupyter", "server", "list"], capture_output=True)
+            .stderr.decode()
+            .splitlines()[1:]
+        )
 
-def check_for_token():
-    category = "Authorization"
-    details = "These servers do not require a token and may allow unauthorized access."
-    servers = subprocess.run(["jupyter", "server", "list"], capture_output=True).stderr.decode().splitlines()[1:]
-    servers = list(filter(lambda x: "token" not in x, servers))
-    return [Finding(category, f, details) for f in servers]
+    def get_findings(self):
+        return (
+            self.get_not_commented()
+            + self.check_ipython_startup()
+            + self.check_for_https()
+            + self.check_for_token()
+            + self.check_for_silent_history()
+            + self.check_for_localhost()
+        )
 
-def check_for_https():
-    category = "Encryption"
-    details = "These servers do not use HTTPS which could lead to MITM vulnerabilities."
-    servers = subprocess.run(["jupyter", "server", "list"], capture_output=True).stderr.decode().splitlines()[1:]
-    servers = list(filter(lambda x: "https" not in x, servers))
-    return [Finding(category, f, details) for f in servers]
+    def check_ipython_startup(self):
+        category = "Code Execution"
+        details = "Files in this startup directory provide code execution when Jupyter is initiated. Ensure the contents of these files are not malicious.\
+         https://ipython.org/ipython-doc/1/config/overview.html#startup-files"
+        path = (
+            subprocess.run(["ipython", "locate"], capture_output=True)
+            .stdout.decode()
+            .rstrip()
+        )
+        files = list(Path(path).rglob("*"))
+        startup_files = [os.listdir(f) for f in files if "startup" in f.name]
+        startup_files = list(itertools.chain(*startup_files))
+        startup_files = list(filter(lambda x: x != "README", startup_files))
+        return [Finding(category, f, details) for f in startup_files]
 
-def db_contains_silent(db):
-    con = sqlite3.connect(db)
-    cur = con.cursor()
-    res = cur.execute("SELECT * FROM history WHERE source LIKE '%execute_interactive%code%silent%=%True%'")
-    return len(res.fetchall()) > 0
+    def get_not_commented(self):
+        category = "Nonstandard Configuration"
+        details = "Uncommented fields in configuration files may enable nonstandard and potentially malicious/vulnerable functionality. \
+        Ensure these configuration values are intentional."
+        findings = list()
+        for file in self.files:
+            with open(file, "r") as f:
+                lines = f.read().splitlines()
+            lines = filter(lambda x: len(x) > 0, lines)
+            findings.append(list(filter(lambda x: x[0] not in ["#"], lines)))
+        findings = list(itertools.chain(*findings))
+        findings.remove("c = get_config()  #noqa")
+        return [Finding(category, f, details) for f in findings]
 
-def check_for_silent_history():
-    category = "Malicious Activity"
-    details = "Some code may have been executed with `silent=True`, an indicator of malicious activity."
-    path = subprocess.run(["ipython", "locate"], capture_output=True).stdout.decode().rstrip()
-    files = list(Path(path).rglob("*"))
-    dbs = [f for f in files if f.name == "history.sqlite"]
-    dbs = list(filter(db_contains_silent, dbs))
-    return [Finding(category, f, details) for f in dbs]
+    def check_for_token(self):
+        category = "Authorization"
+        details = "These servers do not require a token and may allow unauthorized access. Ensure there is password authentication."
+        servers = list(filter(lambda x: "token" not in x, self.servers))
+        return [Finding(category, f, details) for f in servers]
+
+    def check_for_https(self):
+        category = "Encryption"
+        details = (
+            "These servers do not use HTTPS which could lead to MITM vulnerabilities."
+        )
+        servers = list(filter(lambda x: "https" not in x, self.servers))
+        return [Finding(category, f, details) for f in servers]
+
+    def check_for_localhost(self):
+        category = "Access"
+        details = "These servers are exposed to a non-localhost domain/ip. They may be accessible to others."
+        servers = list(filter(lambda x: "localhost" not in x, self.servers))
+        return [Finding(category, f, details) for f in servers]
+
+    def db_contains_silent(self, db):
+        con = sqlite3.connect(db)
+        cur = con.cursor()
+        res = cur.execute(
+            "SELECT * FROM history WHERE source LIKE '%execute_interactive%code%silent%=%True%'"
+        )
+        return len(res.fetchall()) > 0
+
+    def check_for_silent_history(self):
+        category = "Malicious Activity"
+        details = "Some code may have been executed with `silent=True`, an indicator of malicious activity."
+        path = (
+            subprocess.run(["ipython", "locate"], capture_output=True)
+            .stdout.decode()
+            .rstrip()
+        )
+        files = list(Path(path).rglob("*"))
+        dbs = [f for f in files if f.name == "history.sqlite"]
+        dbs = list(filter(self.db_contains_silent, dbs))
+        return [Finding(category, f, details) for f in dbs]

@@ -34,12 +34,14 @@ const extension: JupyterFrontEndPlugin<void> = {
     console.log('JupyterLab extension jupysec is activated!');
 
     // GET request
+    /**
     try {
       const data = await requestAPI<any>('scorecard_update');
       console.log(data);
     } catch (reason) {
       console.error(`Error on GET /jupysec/scorecard_update.\n${reason}`);
     }
+     */
 
     // POST request
     /**
@@ -62,8 +64,8 @@ const extension: JupyterFrontEndPlugin<void> = {
     const category = 'Security';
 
     commands.addCommand(command, {
-      label: 'Get Server Content in a IFrame Widget',
-      caption: 'Get Server Content in a IFrame Widget',
+      label: 'Security Report',
+      caption: 'Security Report',
       execute: () => {
         const widget = new IFrameWidget();
         widget.update();
