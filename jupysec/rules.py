@@ -76,6 +76,10 @@ class Rules:
             findings.remove('c = get_config()  #noqa')
         except ValueError:
             pass
+        try:
+            findings.remove('c = get_config()  # noqa')
+        except ValueError:
+            pass
         return [Finding(category, f, details) for f in findings]
 
     def check_for_token(self):
