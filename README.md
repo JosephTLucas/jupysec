@@ -1,6 +1,6 @@
 # jupysec
 
-[![Github Actions Status](https://github.com/JosephTLucas/jupysec/workflows/Build/badge.svg)](https://github.com/JosephTLucas/jupysec/actions/workflows/build.yml)[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/JosephTLucas/jupysec/main?urlpath=lab)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/JosephTLucas/jupysec/main?urlpath=lab)
 JupyterLab Security Utilities
 
 Security utilities for Jupyter environments. This extension evaluates the security posture of the environment by comparing configuration values with best practices.
