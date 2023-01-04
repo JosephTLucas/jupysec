@@ -1,6 +1,7 @@
 include LICENSE
 include README.md
 include pyproject.toml
+exclude jupysec/public/score.html
 
 recursive-include jupyter-config *.json
 
@@ -8,6 +9,7 @@ include package.json
 include ts*.json
 graft jupysec/labextension
 graft jupysec/public
+graft jupysec/templates
 
 # Javascript files
 graft src
