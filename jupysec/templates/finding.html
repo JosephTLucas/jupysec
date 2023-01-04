@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+{# templates/finding.html #}
+
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="score.css">
+  </head>
+    <body>
+        <h1>Finding {{ finding.uuid }}</h1>
+        <ul>
+          <li><b>Category: {{ finding.category }}</b></li>
+          <li><b>Source: {{ finding.source_text }} -> {{ finding.source_doc }}:{{ finding.source_line }}</b></li>
+          <li><b>Details: {{ finding.details }}</b></li>
+          <li><b>Remediation: {{ finding.remediation }}</b></li>
+        </ul>
+        <p>Timestamp: {{ time }}</p>
+    </body>
+</html>
