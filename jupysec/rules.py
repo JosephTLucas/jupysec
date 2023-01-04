@@ -72,7 +72,10 @@ class Rules:
             lines = filter(lambda x: len(x) > 0, lines)
             findings.append(list(filter(lambda x: x[0] not in ["#"], lines)))
         findings = list(itertools.chain(*findings))
-        findings.remove("c = get_config()  #noqa")
+        try:
+            findings.remove('c = get_config()  #noqa')
+        except ValueError:
+            pass
         return [Finding(category, f, details) for f in findings]
 
     def check_for_token(self):
