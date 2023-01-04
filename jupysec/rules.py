@@ -3,6 +3,7 @@ from pathlib import Path
 import itertools
 import os
 from collections import namedtuple
+import sqlite3
 
 Finding = namedtuple('Finding', ['category', 'file', 'details'])
 
@@ -38,7 +39,22 @@ def check_for_token():
 
 def check_for_https():
     category = "Encryption"
-    details = "These servers do not HTTPS which could lead to MITM vulnerabilities."
+    details = "These servers do not use HTTPS which could lead to MITM vulnerabilities."
     servers = subprocess.run(["jupyter", "server", "list"], capture_output=True).stderr.decode().splitlines()[1:]
     servers = list(filter(lambda x: "https" not in x, servers))
     return [Finding(category, f, details) for f in servers]
+
+def db_contains_silent(db):
+    con = sqlite3.connect(db)
+    cur = con.cursor()
+    res = cur.execute("SELECT * FROM history WHERE source LIKE '%execute_interactive%code%silent%=%True%'")
+    return len(res.fetchall()) > 0
+
+def check_for_silent_history():
+    category = "Malicious Activity"
+    details = "Some code may have been executed with `silent=True`, an indicator of malicious activity."
+    path = subprocess.run(["ipython", "locate"], capture_output=True).stdout.decode().rstrip()
+    files = list(Path(path).rglob("*"))
+    dbs = [f for f in files if f.name == "history.sqlite"]
+    dbs = list(filter(db_contains_silent, dbs))
+    return [Finding(category, f, details) for f in dbs]

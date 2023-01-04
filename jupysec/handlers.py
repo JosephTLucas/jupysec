@@ -11,7 +11,7 @@ from jupyter_server.utils import url_path_join
 import tornado
 from tornado.web import StaticFileHandler
 
-from jupysec.rules import check_ipython_startup, get_not_commented, check_for_token, check_for_https
+from jupysec.rules import check_ipython_startup, get_not_commented, check_for_token, check_for_https, check_for_silent_history
 
 class FileHandler():
     def __init__(self):
@@ -59,7 +59,7 @@ class RouteHandler(APIHandler):
         self.finish(json.dumps(data))
 
 def get_findings(files):
-    return get_not_commented(files) + check_ipython_startup() + check_for_https() + check_for_token()
+    return get_not_commented(files) + check_ipython_startup() + check_for_https() + check_for_token() + check_for_silent_history()
 
 
 def setup_handlers(web_app, url_path):
