@@ -15,8 +15,14 @@ from tornado.web import StaticFileHandler
 from jupysec.rules import Rules
 class FileHandler():
     def __init__(self):
-        self.in_dir = os.path.join(os.path.dirname(__file__), "templates")
-        self.out_dir = os.path.join(os.path.dirname(__file__), "public")
+        self.in_dir = os.getenv(
+            "JLAB_SERVER_EXAMPLE_STATIC_DIR",
+            os.path.join(os.path.dirname(__file__), "templates"),
+        )
+        self.out_dir = os.getenv(
+            "JLAB_SERVER_EXAMPLE_STATIC_DIR",
+            os.path.join(os.path.dirname(__file__), "public"),
+        )
 
     def write_to_template(self, content):
         env = Environment(loader=FileSystemLoader(self.in_dir))
@@ -56,6 +62,9 @@ def setup_handlers(web_app, url_path):
 
     # Prepend the base_url so that it works in a JupyterHub setting
     doc_url = url_path_join(base_url, url_path, "public")
-    doc_dir = os.path.join(os.path.dirname(__file__), "public")
+    doc_dir = os.getenv(
+        "JLAB_SERVER_EXAMPLE_STATIC_DIR",
+        os.path.join(os.path.dirname(__file__), "public"),
+    )
     handlers = [("{}/(.*)".format(doc_url), StaticFileHandler, {"path": doc_dir})]
     web_app.add_handlers(".*$", handlers)
