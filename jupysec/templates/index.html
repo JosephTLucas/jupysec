@@ -16,11 +16,10 @@
           {% for finding in findings %}
           <tr>
             <td>{{ finding.category }}</td>
-            <td>{{ finding.file }}</td>
+            <td><a href= "{{ finding.uuid }}.html">{{ finding.source_text }}</a></td>
             <td>{{ finding.details}}</td>
           </tr>
         {% endfor %}
-        </ul>
         <p>Timestamp: {{ time }}</p>
     </body>
 </html>
