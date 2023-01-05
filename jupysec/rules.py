@@ -2,11 +2,9 @@ import subprocess
 from pathlib import Path
 import itertools
 import os
-from collections import namedtuple
 import sqlite3
 import json
-
-Finding = namedtuple("Finding", ["category", "file", "details"])
+from jupysec.finding import Finding
 
 
 class Rules:
@@ -48,8 +46,9 @@ class Rules:
 
     def check_ipython_startup(self):
         category = "Code Execution"
-        details = "Files in this startup directory provide code execution when Jupyter is initiated. Ensure the contents of these files are not malicious.\
-         https://ipython.org/ipython-doc/1/config/overview.html#startup-files"
+        details = "Files in this startup directory provide code execution when Jupyter is initiated."
+        remediation = "Ensure the contents of these files are not malicious.\
+        https://ipython.org/ipython-doc/1/config/overview.html#startup-files"
         path = (
             subprocess.run(["ipython", "locate"], capture_output=True)
             .stdout.decode()
@@ -59,12 +58,13 @@ class Rules:
         startup_files = [os.listdir(f) for f in files if "startup" in f.name]
         startup_files = list(itertools.chain(*startup_files))
         startup_files = list(filter(lambda x: x != "README", startup_files))
-        return [Finding(category, f, details) for f in startup_files]
+        
+        return [Finding(category=category, source_doc=f, source_details=details, remedation=remediation) for f in startup_files]
 
     def get_not_commented(self):
         category = "Nonstandard Configuration"
-        details = "Uncommented fields in configuration files may enable nonstandard and potentially malicious/vulnerable functionality. \
-        Ensure these configuration values are intentional."
+        details = "Uncommented fields in configuration files may enable nonstandard and potentially malicious/vulnerable functionality."
+        remediation = "Ensure these configuration values are intentional."
         findings = list()
         for file in self.files:
             with open(file, "r") as f:
@@ -80,27 +80,31 @@ class Rules:
             findings.remove('c = get_config()  # noqa')
         except ValueError:
             pass
-        return [Finding(category, f, details) for f in findings]
+        return [Finding(category=category, source_text=f, source_details=details, remediation=remediation) for f in findings]
+
 
     def check_for_token(self):
         category = "Authorization"
-        details = "These servers do not require a token and may allow unauthorized access. Ensure there is password authentication."
+        details = "These servers do not require a token and may allow unauthorized access."
+        remediation = "Either enable tokens or ensure you are using password authentication."
         servers = list(filter(lambda x: "token" not in x, self.servers))
-        return [Finding(category, f, details) for f in servers]
+        return [Finding(category=category, source_text=f, source_doc="jupyter server list", source_details=details, remediation=remediation) for f in servers]
 
     def check_for_https(self):
         category = "Encryption"
         details = (
             "These servers do not use HTTPS which could lead to MITM vulnerabilities."
         )
+        remediation = "Enable HTTPS: https://jupyterhub.readthedocs.io/en/stable/getting-started/security-basics.html#enabling-ssl-encryption"
         servers = list(filter(lambda x: "https" not in x, self.servers))
-        return [Finding(category, f, details) for f in servers]
+        return [Finding(category=category, source_text=f, source_doc="jupyter server list", source_details=details, remediation=remediation) for f in servers]
 
     def check_for_localhost(self):
         category = "Access"
         details = "These servers are exposed to a non-localhost domain/ip. They may be accessible to others."
+        remediation = "Test external accessibility and reduce it as much as possible."
         servers = list(filter(lambda x: "localhost" not in x, self.servers))
-        return [Finding(category, f, details) for f in servers]
+        return [Finding(category=category, source_text=f, source_doc="jupyter server list",source_details=details, remediation=remediation) for f in servers]
 
     def db_contains_silent(self, db):
         con = sqlite3.connect(db)
@@ -113,6 +117,7 @@ class Rules:
     def check_for_silent_history(self):
         category = "Malicious Activity"
         details = "Some code may have been executed with `silent=True`, an indicator of malicious activity."
+        remediation = "Treat this as an active security incident until all silently run commands are verified as non-malicious."
         path = (
             subprocess.run(["ipython", "locate"], capture_output=True)
             .stdout.decode()
@@ -121,4 +126,4 @@ class Rules:
         files = list(Path(path).rglob("*"))
         dbs = [f for f in files if f.name == "history.sqlite"]
         dbs = list(filter(self.db_contains_silent, dbs))
-        return [Finding(category, f, details) for f in dbs]
+        return [Finding(category=category, source_doc=f.name,source_details=details, remediation=remediation) for f in dbs]
