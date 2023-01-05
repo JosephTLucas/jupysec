@@ -1,7 +1,7 @@
 include LICENSE
 include README.md
 include pyproject.toml
-exclude jupysec/public/score.html
+exclude jupysec/public/*.html
 
 recursive-include jupyter-config *.json
 

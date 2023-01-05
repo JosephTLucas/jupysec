@@ -59,7 +59,7 @@ class Rules:
         startup_files = list(itertools.chain(*startup_files))
         startup_files = list(filter(lambda x: x != "README", startup_files))
         
-        return [Finding(category=category, source_doc=f, source_details=details, remedation=remediation) for f in startup_files]
+        return [Finding(category=category, source_text=f, source_details=details, remediation=remediation) for f in startup_files]
 
     def get_not_commented(self):
         category = "Nonstandard Configuration"
@@ -126,4 +126,4 @@ class Rules:
         files = list(Path(path).rglob("*"))
         dbs = [f for f in files if f.name == "history.sqlite"]
         dbs = list(filter(self.db_contains_silent, dbs))
-        return [Finding(category=category, source_doc=f.name,source_details=details, remediation=remediation) for f in dbs]
+        return [Finding(category=category, source_text=f,source_details=details, remediation=remediation) for f in dbs]
