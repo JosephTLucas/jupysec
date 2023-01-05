@@ -1,7 +1,10 @@
 # jupysec
 
-[![Github Actions Status](https://github.com/JosephTLucas/jupysec/workflows/Build/badge.svg)](https://github.com/JosephTLucas/jupysec/actions/workflows/build.yml)[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/JosephTLucas/jupysec/main?urlpath=lab)
-JupyterLab Security Utilities
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/JosephTLucas/jupysec/main?urlpath=lab)
+
+![logo](jupysec.png)
+
+_JupyterLab Security Utilities_
 
 Security utilities for Jupyter environments. This extension evaluates the security posture of the environment by comparing configuration values with best practices.
 
@@ -23,6 +26,10 @@ These rules currently evaluate:
 - If silent commands have been run against your kernels
 
 Some of these categories may have false-positives depending on your environment and use-case. However, users should monitor their environments and be aware of their security posture and any changes.
+
+Matches against [the rules](https://github.com/JosephTLucas/jupysec/blob/dev/jupysec/rules.py) are referred to as "Findings" and displayed in the Report Card.
+
+![report card](report.png)
 
 ## Requirements
 
