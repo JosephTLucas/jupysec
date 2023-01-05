@@ -39,6 +39,8 @@ class RouteHandler(APIHandler):
     # Jupyter server
     @tornado.web.authenticated
     def get(self):
+        for filename in Path("jupysec/public/").glob("*.html"):
+            filename.unlink()
         r = Rules()
         findings = r.get_findings()
         f = FileHandler()

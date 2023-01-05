@@ -4,7 +4,7 @@ import itertools
 import os
 import sqlite3
 import json
-from finding import Finding
+from jupysec.finding import Finding
 
 
 class Rules:

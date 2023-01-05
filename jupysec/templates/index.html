@@ -14,7 +14,7 @@
             <th>Details</th>
           </tr>
           {% for finding in findings %}
-          <tr>
+          <tr data-val="{{ finding.category }}">
             <td>{{ finding.category }}</td>
             <td><a href= "{{ finding.uuid }}.html">{{ finding.source_text }}</a></td>
             <td>{{ finding.details}}</td>
