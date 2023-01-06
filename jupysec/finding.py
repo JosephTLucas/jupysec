@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from uuid import uuid4, UUID
-from jinja2 import Environment, FileSystemLoader
+import uuid
 
 @dataclass
 class Finding:
@@ -9,4 +8,7 @@ class Finding:
     source_text: str = ""
     source_details: str = ""
     remediation: str = ""
-    uuid: UUID = uuid4()
+    uuid = None
+
+    def __post_init__(self):
+        self.uuid = uuid.uuid4()
