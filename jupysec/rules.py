@@ -9,47 +9,48 @@ from jupysec.finding import Finding
 
 class Rules:
     def __init__(self):
-        paths = subprocess.run(["jupyter", "--paths"], capture_output=True).stdout
-        paths = paths.decode().splitlines()
-        paths = [x.lstrip() for x in paths]
-        paths.append(
-            subprocess.run(["ipython", "locate"], capture_output=True)
-            .stdout.decode()
-            .rstrip()
-        )
-        paths = set(filter(lambda x: x not in ["config:", "data:", "runtime:"], paths))
-        files = [list(Path(p).rglob("*")) for p in paths]
-        files = list(itertools.chain(*files))
-        target_py_files = (
-            "jupyter_server_config.py",
-            "jupyter_notebook_config.py",
-            "ipython_config.py",
-        )
-        target_json_files = (
-            "jupyter_server_config.json",
-            "jupyter_notebook_config.json",
-        )
-        self.py_files = list(filter(lambda x: x.name.endswith(target_py_files), files))
-        self.py_uncommented = list()
-        for file in self.py_files:
-            with open(file, "r") as f:
-                lines = f.read().splitlines()
-            lines = filter(lambda x: len(x) > 0, lines)
-            self.py_uncommented.append(list(filter(lambda x: x[0] not in ["#"], lines)))
-        self.py_uncommented = list(itertools.chain(*self.py_uncommented))
-        self.json_files = list(
-            filter(lambda x: x.name.endswith(target_json_files), files)
-        )
-        self.servers = servers = (
-            subprocess.run(["jupyter", "server", "list"], capture_output=True)
-            .stderr.decode()
-            .splitlines()[1:]
-        )
-        self.path = (
-            subprocess.run(["ipython", "locate"], capture_output=True)
-            .stdout.decode()
-            .rstrip()
-        )
+        locations = subprocess.run(["ipython", "locate"], capture_output=True)
+        if locations.returncode == 0:
+            self.locations = locations.stdout.decode().rstrip()
+        else:
+            self.locations = list()
+        paths = subprocess.run(["jupyter", "--paths"], capture_output=True)
+        if paths.returncode == 0:
+            paths = paths.stdout.decode().splitlines()
+            paths = [x.lstrip() for x in paths]
+            paths.append(self.locations)
+            paths = set(filter(lambda x: x not in ["config:", "data:", "runtime:"], paths))
+            files = [list(Path(p).rglob("*")) for p in paths]
+            files = list(itertools.chain(*files))
+            target_py_files = (
+                "jupyter_server_config.py",
+                "jupyter_notebook_config.py",
+                "ipython_config.py",
+            )
+            target_json_files = (
+                "jupyter_server_config.json",
+                "jupyter_notebook_config.json",
+            )
+            self.py_files = list(filter(lambda x: x.name.endswith(target_py_files), files))
+            self.py_uncommented = list()
+            for file in self.py_files:
+                with open(file, "r") as f:
+                    lines = f.read().splitlines()
+                lines = filter(lambda x: len(x) > 0, lines)
+                self.py_uncommented.append(list(filter(lambda x: x[0] not in ["#"], lines)))
+            self.py_uncommented = list(itertools.chain(*self.py_uncommented))
+            self.json_files = list(
+                filter(lambda x: x.name.endswith(target_json_files), files)
+            )
+        else:
+            self.py_files = list()
+            self.py_uncommented = list()
+            self.json_files = list()
+        servers = subprocess.run(["jupyter", "server", "list"], capture_output=True)
+        if servers.returncode == 0:
+            self.servers = servers.stderr.decode().splitlines()[1:]
+        else:
+            self.servers = list()
 
 
     def get_findings(self):
@@ -69,7 +70,7 @@ class Rules:
         details = "Files in this startup directory provide code execution when Jupyter is initiated."
         remediation = "Ensure the contents of these files are not malicious.\
         https://ipython.org/ipython-doc/1/config/overview.html#startup-files"
-        files = list(Path(self.path).rglob("*"))
+        files = list(Path(self.locations).rglob("*"))
         startup_files = [os.listdir(f) for f in files if "startup" in f.name]
         startup_files = list(itertools.chain(*startup_files))
         startup_files = list(filter(lambda x: x != "README", startup_files))
@@ -150,7 +151,7 @@ class Rules:
                 "SELECT * FROM history WHERE source LIKE '%execute_interactive%code%silent%=%True%'"
             )
             return len(res.fetchall()) > 0
-        files = list(Path(self.path).rglob("*"))
+        files = list(Path(self.locations).rglob("*"))
         dbs = [f for f in files if f.name == "history.sqlite"]
         dbs = list(filter(_db_contains_silent, dbs))
         return [
