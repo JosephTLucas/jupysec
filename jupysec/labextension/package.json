@@ -1,6 +1,6 @@
 {
   "name": "jupysec",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "JupyterLab Security Utilities",
   "keywords": [
     "jupyter",
@@ -98,7 +98,7 @@
     "extension": true,
     "outputDir": "jupysec/labextension",
     "_build": {
-      "load": "static/remoteEntry.a1631e4e3403e906cc27.js",
+      "load": "static/remoteEntry.c23214d70b816b1d2722.js",
       "extension": "./extension",
       "style": "./style"
     }

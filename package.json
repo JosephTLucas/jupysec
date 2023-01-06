@@ -1,6 +1,6 @@
 {
   "name": "jupysec",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "JupyterLab Security Utilities",
   "keywords": [
     "jupyter",

@@ -27,25 +27,19 @@ class Rules:
                 "jupyter_notebook_config.py",
                 "ipython_config.py",
             )
-            target_json_files = (
-                "jupyter_server_config.json",
-                "jupyter_notebook_config.json",
-            )
-            self.py_files = list(filter(lambda x: x.name.endswith(target_py_files), files))
-            self.py_uncommented = list()
-            for file in self.py_files:
+            py_files = list(filter(lambda x: x.name.endswith(target_py_files), files))
+            py_uncommented = list()
+            for file in py_files:
                 with open(file, "r") as f:
                     lines = f.read().splitlines()
                 lines = filter(lambda x: len(x) > 0, lines)
-                self.py_uncommented.append(list(filter(lambda x: x[0] not in ["#"], lines)))
-            self.py_uncommented = list(itertools.chain(*self.py_uncommented))
-            self.json_files = list(
-                filter(lambda x: x.name.endswith(target_json_files), files)
-            )
+                py_uncommented.append(((list(filter(lambda x: x.lstrip()[0] not in ["#"], lines))), file))
+            self.uncommented = dict()
+            for lines, file in py_uncommented:
+                for l in lines:
+                    self.uncommented[l] = file
         else:
-            self.py_files = list()
-            self.py_uncommented = list()
-            self.json_files = list()
+            self.uncommented = dict()
         servers = subprocess.run(["jupyter", "server", "list"], capture_output=True)
         if servers.returncode == 0:
             self.servers = servers.stderr.decode().splitlines()[1:]
@@ -71,18 +65,22 @@ class Rules:
         remediation = "Ensure the contents of these files are not malicious.\
         https://ipython.org/ipython-doc/1/config/overview.html#startup-files"
         files = list(Path(self.locations).rglob("*"))
-        startup_files = [os.listdir(f) for f in files if "startup" in f.name]
-        startup_files = list(itertools.chain(*startup_files))
-        startup_files = list(filter(lambda x: x != "README", startup_files))
+        startup_files = [(os.listdir(f), f) for f in files if "startup" in f.name]
+        res = dict()
+        for py_files, dir in startup_files:
+            py_files = list(filter(lambda x: x != "README", py_files))
+            for pf in py_files:
+                res[pf] = dir
 
         return [
             Finding(
                 category=category,
-                source_text=f,
+                source_text=file,
+                source_doc=path,
                 source_details=details,
                 remediation=remediation,
             )
-            for f in startup_files
+            for file,path in res.items()
         ]
 
     def check_for_token(self):
@@ -158,6 +156,7 @@ class Rules:
             Finding(
                 category=category,
                 source_text=f,
+                source_doc='',
                 source_details=details,
                 remediation=remediation,
             )
@@ -170,9 +169,9 @@ class Rules:
              Threat actors may use them for persistence or to modify your environment without your knowledge."
         remediation = "Ensure these configuration values are intentional. If you don't recognize them, alert your incident response team."
         findings = [
-            f
-            for f in self.py_uncommented
-            if f.startswith(
+            (line, path)
+            for line, path in self.uncommented.items()
+            if line.startswith(
                 (
                     "c.InteractiveShellApp.code_to_run",
                     "c.InteractiveShellApp.exec_PYTHONSTARTUP",
@@ -216,11 +215,12 @@ class Rules:
         return [
             Finding(
                 category=category,
-                source_text=f,
+                source_text=line,
+                source_doc=path,
                 source_details=details,
                 remediation=remediation,
             )
-            for f in findings
+            for line,path in findings
         ]
 
 
@@ -230,9 +230,9 @@ class Rules:
              Threat actors may use these to hide or obfuscate their actions. Unmodified history is an important incident response artifact."
         remediation = "Ensure these configuration values are intentional. If you don't recognize them, alert your incident response team."
         findings = [
-            f
-            for f in self.py_uncommented
-            if f.startswith(
+            (line, path)
+            for line,path in self.uncommented.items()
+            if line.startswith(
                 (
                     "c.InteractiveShell.history_length",
                     "c.InteractiveShell.history_load_length",
@@ -253,11 +253,12 @@ class Rules:
         return [
             Finding(
                 category=category,
-                source_text=f,
+                source_text=line,
+                source_doc=path,
                 source_details=details,
                 remediation=remediation,
             )
-            for f in findings
+            for line,path in findings
         ]
 
 
@@ -267,9 +268,9 @@ class Rules:
              Threat actors may use these to circumvent secure defaults."
         remediation = "Ensure these configuration values are intentional. If you don't recognize them, alert your incident response team."
         findings = [
-            f
-            for f in self.py_uncommented
-            if f.startswith(
+            (line,path)
+            for line,path in self.uncommented.items()
+            if line.startswith(
                 (
                     "c.JupyterApp.answer_yes",
                     "c.ServerApp.allow_origin",
@@ -310,9 +311,10 @@ class Rules:
         return [
             Finding(
                 category=category,
-                source_text=f,
+                source_text=line,
+                source_doc=path,
                 source_details=details,
                 remediation=remediation,
             )
-            for f in findings
+            for line,path in findings
         ]
