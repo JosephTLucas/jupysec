@@ -19,7 +19,7 @@ Configurations will be compared against [these rules](https://github.com/JosephT
 These rules currently evaluate:
 
 - Whether there are any executables in your ipython startup directories
-- What lines of your configuration are nonstandard (uncommented)
+- What lines of your configuration are nonstandard with known malicious uses
 - Whether your servers require tokens for authentication
 - Whether your server and client are communicating over HTTPS
 - Whether you are serving Jupyter to a broader domain than just localhost
@@ -35,13 +35,14 @@ Matches against [the rules](https://github.com/JosephTLucas/jupysec/blob/dev/jup
 
 - JupyterLab >= 3.0
 
-## Install
+## Getting Started
 
 To install the extension, execute:
 
 ```bash
 pip install jupysec
 ```
+After starting jupyterlab, your launcher window should now have a "Security" section with a widget for generating your findings. This will launch and index page with a list of all findings, color-coded by category. Click into findings for more details.
 
 ## Uninstall
 
