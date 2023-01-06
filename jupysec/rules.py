@@ -30,6 +30,13 @@ class Rules:
             "jupyter_notebook_config.json",
         )
         self.py_files = list(filter(lambda x: x.name.endswith(target_py_files), files))
+        self.py_uncommented = list()
+        for file in self.py_files:
+            with open(file, "r") as f:
+                lines = f.read().splitlines()
+            lines = filter(lambda x: len(x) > 0, lines)
+            self.py_uncommented.append(list(filter(lambda x: x[0] not in ["#"], lines)))
+        self.py_uncommented = list(itertools.chain(*self.py_uncommented))
         self.json_files = list(
             filter(lambda x: x.name.endswith(target_json_files), files)
         )
@@ -161,16 +168,9 @@ class Rules:
         details = "These uncommented fields in configuration files enable non-obvious code execution.\
              Threat actors may use them for persistence or to modify your environment without your knowledge."
         remediation = "Ensure these configuration values are intentional. If you don't recognize them, alert your incident response team."
-        findings = list()
-        for file in self.py_files:
-            with open(file, "r") as f:
-                lines = f.read().splitlines()
-            lines = filter(lambda x: len(x) > 0, lines)
-            findings.append(list(filter(lambda x: x[0] not in ["#"], lines)))
-        findings = list(itertools.chain(*findings))
         findings = [
             f
-            for f in findings
+            for f in self.py_uncommented
             if f.startswith(
                 (
                     "c.InteractiveShellApp.code_to_run",
@@ -228,16 +228,9 @@ class Rules:
         details = "These uncommented fields in configuration files enable modification of history functions.\
              Threat actors may use these to hide or obfuscate their actions. Unmodified history is an important incident response artifact."
         remediation = "Ensure these configuration values are intentional. If you don't recognize them, alert your incident response team."
-        findings = list()
-        for file in self.py_files:
-            with open(file, "r") as f:
-                lines = f.read().splitlines()
-            lines = filter(lambda x: len(x) > 0, lines)
-            findings.append(list(filter(lambda x: x[0] not in ["#"], lines)))
-        findings = list(itertools.chain(*findings))
         findings = [
             f
-            for f in findings
+            for f in self.py_uncommented
             if f.startswith(
                 (
                     "c.InteractiveShell.history_length",
@@ -272,16 +265,9 @@ class Rules:
         details = "These uncommented fields in configuration files are related to security settings.\
              Threat actors may use these to circumvent secure defaults."
         remediation = "Ensure these configuration values are intentional. If you don't recognize them, alert your incident response team."
-        findings = list()
-        for file in self.py_files:
-            with open(file, "r") as f:
-                lines = f.read().splitlines()
-            lines = filter(lambda x: len(x) > 0, lines)
-            findings.append(list(filter(lambda x: x[0] not in ["#"], lines)))
-        findings = list(itertools.chain(*findings))
         findings = [
             f
-            for f in findings
+            for f in self.py_uncommented
             if f.startswith(
                 (
                     "c.JupyterApp.answer_yes",
