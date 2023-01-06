@@ -49,6 +49,7 @@ class Rules:
         return (
             self.check_pyconfig_historymod()
             + self.check_pyconfig_codeexec()
+            + self.check_pyconfig_securitysettings()
             + self.check_ipython_startup()
             + self.check_for_https()
             + self.check_for_token()
@@ -196,6 +197,18 @@ class Rules:
                     "c.TerminalIPythonApp.ipython_dir",
                     "c.TerminalIPythonApp.module_to_run",
                     "c.TerminalIPythonApp.profile",
+                    "c.JupyterApp.config_file",
+                    "c.JupyterApp.config_file_name",
+                    "c.ServerApp.browser",
+                    "c.ServerApp.config_file",
+                    "c.ServerApp.config_file_name",
+                    "c.ServerApp.jpserver_extensions",
+                    "c.Session.packer",
+                    "c.ContentsManager.post_save_hook",
+                    "c.ContentsManager.pre_save_hook",
+                    "c.FileContentsManager.delete_to_trash",
+                    "c.FileContentsManager.post_save_hook",
+                    "c.FileContentsManager.pre_save_hook",
                 )
             )
         ]
@@ -240,6 +253,70 @@ class Rules:
                     "c.HistoryManager.enabled",
                     "c.HistoryManager.hist_file",
                     "c.InteractiveShell.history_load_length",
+                )
+            )
+        ]
+        return [
+            Finding(
+                category=category,
+                source_text=f,
+                source_details=details,
+                remediation=remediation,
+            )
+            for f in findings
+        ]
+
+
+    def check_pyconfig_securitysettings(self):
+        category = "Nonstandard Configuration"
+        details = "These uncommented fields in configuration files are related to security settings.\
+             Threat actors may use these to circumvent secure defaults."
+        remediation = "Ensure these configuration values are intentional. If you don't recognize them, alert your incident response team."
+        findings = list()
+        for file in self.py_files:
+            with open(file, "r") as f:
+                lines = f.read().splitlines()
+            lines = filter(lambda x: len(x) > 0, lines)
+            findings.append(list(filter(lambda x: x[0] not in ["#"], lines)))
+        findings = list(itertools.chain(*findings))
+        findings = [
+            f
+            for f in findings
+            if f.startswith(
+                (
+                    "c.JupyterApp.answer_yes",
+                    "c.ServerApp.allow_origin",
+                    "c.ServerApp.allow_origin_pat",
+                    "c.ServerApp.allow_remote_access",
+                    "c.ServerApp.allow_root",
+                    "c.ServerApp.answer_yes",
+                    "c.ServerApp.authenticate_prometheus",
+                    "c.ServerApp.autoreload",
+                    "c.ServerApp.cookie_secret",
+                    "c.ServerApp.cookie_secret_file",
+                    "c.ServerApp.custom_display_url",
+                    "c.ServerApp.default_url",
+                    "c.ServerApp.disable_check_xsrf",
+                    "c.ServerApp.extra_static_paths",
+                    "c.ServerApp.extra_template_paths",
+                    "c.ServerApp.file_to_run",
+                    "c.ServerApp.identity_provider_class",
+                    "c.ServerApp.ip",
+                    "c.ServerApp.local_hostnames",
+                    "c.ServerApp.login_handler_class",
+                    "c.ServerApp.max_body_size",
+                    "c.ServerApp.max_buffer_size",
+                    "c.ServerApp.trust_xheaders",
+                    "c.ServerApp.use_redirect_file",
+                    "c.KernelManager.connection_file",
+                    "c.KernelManager.control_port",
+                    "c.KernelManager.hb_port",
+                    "c.KernelManager.iopub_port",
+                    "c.KernelManager.ip",
+                    "c.KernelManager.shell_port",
+                    "c.KernelManager.stdin_port",
+                    "c.Session.check_pid",
+                    "c.GatewayClient.validate_cert",
                 )
             )
         ]
