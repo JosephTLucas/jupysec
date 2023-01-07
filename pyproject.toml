@@ -7,7 +7,7 @@ packages = ["jupysec"]
 
 [project]
 name = "jupysec"
-version = "0.1.13"
+version = "0.1.15"
 authors = [
   { name="Joe Lucas", email="joe@joetl.com" },
 ]

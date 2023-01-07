@@ -12,7 +12,7 @@ Security utilities for Jupyter environments. This set of rules and JupyerLab ext
 
 Run the extension to generate an HTML report of the security configuration of your Jupyter instance and other Jupyter instances on your host.
 
-Configurations will be compared against [these rules](https://github.com/JosephTLucas/jupysec/blob/dev/jupysec/rules.py).
+Configurations will be compared against [these rules](https://github.com/JosephTLucas/jupysec/blob/main/jupysec/rules.py).
 
 These rules currently evaluate:
 
@@ -25,7 +25,7 @@ These rules currently evaluate:
 
 Some of these categories may have false-positives depending on your environment and use-case. However, users should monitor their environments and be aware of their security posture and any changes.
 
-Matches against [the rules](https://github.com/JosephTLucas/jupysec/blob/dev/jupysec/rules.py) are referred to as "Findings" and displayed in the Report Card.
+Matches against [the rules](https://github.com/JosephTLucas/jupysec/blob/main/jupysec/rules.py) are referred to as "Findings" and displayed in the Report Card.
 
 ![report card](report.png)
 
@@ -35,7 +35,7 @@ Matches against [the rules](https://github.com/JosephTLucas/jupysec/blob/dev/jup
 
 ## Getting Started
 
-To install the rules in cli mode, execute:
+To install just the rules, install with:
 
 ```bash
 pip install jupysec
@@ -49,10 +49,10 @@ from jupysec.rules import Rules
 Rules().get_findings()
 ```
 
-Or install the JupyterLab extension with
+Or to also install the JupyterLab extension:
 
 ```bash
-pip install jupysec[jupyterlab]
+pip install 'jupysec[jupyterlab]'
 ```
 
 After starting jupyterlab, your launcher window should now have a "Security" section with a widget for generating your findings. This will launch and index page with a list of all findings, color-coded by category. Click into findings for more details.

@@ -14,7 +14,8 @@ class Rules:
         self.servers = self._get_servers()
 
     def _get_locations(self):
-        locations = self.run_command(["ipython", "locate"])
+        """Gets the path to the ipython directory"""
+        locations = self._run_command(["ipython", "locate"])
         if locations.returncode == 0:
             locations = locations.stdout.decode().rstrip()
         else:
@@ -22,7 +23,11 @@ class Rules:
         return locations
 
     def _get_uncommented(self):
-        paths = self.run_command(["jupyter", "--paths"])
+        """
+        Finds uncommented lines of code in python configuration files.
+        Returns a dict with the key is the uncommented line of code and the value is the file path.
+        """
+        paths = self._run_command(["jupyter", "--paths"])
         if paths.returncode == 0:
             paths = paths.stdout.decode().splitlines()
             paths = [x.lstrip() for x in paths]
@@ -37,9 +42,7 @@ class Rules:
                 "jupyter_notebook_config.py",
                 "ipython_config.py",
             )
-            py_files = list(
-                filter(lambda x: x.name.endswith(target_py_files), files)
-            )
+            py_files = list(filter(lambda x: x.name.endswith(target_py_files), files))
             py_uncommented = list()
             for file in py_files:
                 with open(file, "r") as f:
@@ -60,7 +63,8 @@ class Rules:
         return uncommented
 
     def _get_servers(self):
-        servers = self.run_command(["jupyter", "server", "list"])
+        """Returns a list of running server descriptors."""
+        servers = self._run_command(["jupyter", "server", "list"])
         if servers.returncode == 0:
             servers = servers.stderr.decode().splitlines()[1:]
         else:
@@ -68,7 +72,7 @@ class Rules:
 
         return servers
 
-    def run_command(self, command):
+    def _run_command(self, command):
         try:
             val = subprocess.run(command, capture_output=True)
         except FileNotFoundError:
@@ -91,14 +95,15 @@ class Rules:
         findings = list(itertools.chain(*findings))
         return findings
 
-
     def check_ipython_startup(self):
         category = "Code Execution"
         details = "Files in this startup directory provide code execution when Jupyter is initiated."
         remediation = "Ensure the contents of these files are not malicious.\
         https://ipython.org/ipython-doc/1/config/overview.html#startup-files"
         files = list(Path(self.locations).rglob("*"))
-        startup_files = [(os.listdir(f), f) for f in files if "startup" in f.name and f.is_dir()]
+        startup_files = [
+            (os.listdir(f), f) for f in files if "startup" in f.name and f.is_dir()
+        ]
         res = dict()
         for py_files, dir in startup_files:
             py_files = list(filter(lambda x: x != "README", py_files))
@@ -181,16 +186,16 @@ class Rules:
             res = cur.execute(
                 "SELECT * FROM history WHERE source LIKE '%execute_interactive%code%silent%=%True%'"
             )
-            return len(res.fetchall()) > 0
+            return res.fetchall()
 
         files = list(Path(self.locations).rglob("*"))
-        dbs = [f for f in files if f.name == "history.sqlite"]
-        dbs = list(filter(_db_contains_silent, dbs))
+        dbs = [(_db_contains_silent(f), f) for f in files if f.name == "history.sqlite"]
+        dbs = list(filter(lambda x: len(x[0]) > 0, dbs))
         return [
             Finding(
                 category=category,
-                source_text=f,
-                source_doc="",
+                source_text=f[0][0][2], #indexing into the db fields to extract the command text
+                source_doc=f[1],
                 source_details=details,
                 remediation=remediation,
             )
