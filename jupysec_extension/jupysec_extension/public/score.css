@@ -1,0 +1,51 @@
+table.styled-table {
+    font-family: "Lucida Console", Monaco, monospace;
+    border: 1px solid #010406;
+    width: 100%;
+    text-align: left;
+    border-collapse: collapse;
+  }
+  table.styled-table td, table.styled-table th {
+    border: 1px solid #010D02;
+    padding: 4px 4px;
+  }
+  table.styled-table tbody td {
+    font-size: 14px;
+    color: #010101;
+  }
+  table.styled-table tr[data-val="Code Execution"] td:first-child + td {
+    background-color: red;
+  }
+  table.styled-table tr[data-val="Encryption"] td:first-child + td {
+    background-color: yellow;
+  }
+  table.styled-table tr[data-val="Nonstandard Configuration"] td:first-child + td {
+    background-color: lightblue;
+  }
+  table.styled-table tr[data-val="Authorization"] td:first-child + td {
+    background-color: lightgreen;
+  }
+  table.styled-table tr[data-val="Access"] td:first-child + td {
+    background-color: lightgray;
+  }
+  table.styled-table tr[data-val="Malicious Activity"] td:first-child + td {
+    background-color: orange;
+  }
+  table.styled-table thead {
+    background: #010508;
+    border-bottom: 2px solid #F7F7F7;
+  }
+  table.styled-table thead th {
+    font-size: 16px;
+    font-weight: bold;
+    color: #FFFFFF;
+    text-align: center;
+    border-left: 2px solid #CEE1F2;
+  }
+  table.styled-table thead th:first-child {
+    border-left: none;
+  }
+
+  h1 {
+    text-align: center;
+  }

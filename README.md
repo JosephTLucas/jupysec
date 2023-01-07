@@ -1,14 +1,10 @@
 # jupysec
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/JosephTLucas/jupysec/main?urlpath=lab)
-
 ![logo](jupysec.png)
 
 _JupyterLab Security Utilities_
 
-Security utilities for Jupyter environments. This extension evaluates the security posture of the environment by comparing configuration values with best practices.
-
-This extension is under active development and pre-alpha release.
+Security utilities for Jupyter environments. This set of rules and JupyerLab extension evaluates the security posture of the environment by comparing configuration values with best practices.
 
 ## Function
 
@@ -39,33 +35,24 @@ Matches against [the rules](https://github.com/JosephTLucas/jupysec/blob/dev/jup
 
 ## Getting Started
 
-To install the extension, execute:
+To install the rules in cli mode, execute:
 
 ```bash
 pip install jupysec
 ```
+
+Then in your python environment:
+
+```python
+from jupysec.rules import Rules
+
+Rules().get_findings()
+```
+
+Or install the JupyterLab extension with
+
+```bash
+pip install jupysec[jupyterlab]
+```
+
 After starting jupyterlab, your launcher window should now have a "Security" section with a widget for generating your findings. This will launch and index page with a list of all findings, color-coded by category. Click into findings for more details.
-
-## Uninstall
-
-To remove the extension, execute:
-
-```bash
-pip uninstall jupysec
-```
-
-## Troubleshoot
-
-If you are seeing the frontend extension, but it is not working, check
-that the server extension is enabled:
-
-```bash
-jupyter server extension list
-```
-
-If the server extension is installed and enabled, but you are not seeing
-the frontend extension, check the frontend extension is installed:
-
-```bash
-jupyter labextension list
-```

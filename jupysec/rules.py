@@ -3,23 +3,33 @@ from pathlib import Path
 import itertools
 import os
 import sqlite3
-import json
 from jupysec.finding import Finding
 
 
 class Rules:
     def __init__(self):
-        locations = subprocess.run(["ipython", "locate"], capture_output=True)
+        """Makes subprocess calls to Jupyter CLI functions to collect data on paths and file contents"""
+        self.locations = self._get_locations()
+        self.uncommented = self._get_uncommented()
+        self.servers = self._get_servers()
+
+    def _get_locations(self):
+        locations = self.run_command(["ipython", "locate"])
         if locations.returncode == 0:
-            self.locations = locations.stdout.decode().rstrip()
+            locations = locations.stdout.decode().rstrip()
         else:
-            self.locations = list()
-        paths = subprocess.run(["jupyter", "--paths"], capture_output=True)
+            locations = False
+        return locations
+
+    def _get_uncommented(self):
+        paths = self.run_command(["jupyter", "--paths"])
         if paths.returncode == 0:
             paths = paths.stdout.decode().splitlines()
             paths = [x.lstrip() for x in paths]
             paths.append(self.locations)
-            paths = set(filter(lambda x: x not in ["config:", "data:", "runtime:"], paths))
+            paths = set(
+                filter(lambda x: x not in ["config:", "data:", "runtime:"], paths)
+            )
             files = [list(Path(p).rglob("*")) for p in paths]
             files = list(itertools.chain(*files))
             target_py_files = (
@@ -27,37 +37,60 @@ class Rules:
                 "jupyter_notebook_config.py",
                 "ipython_config.py",
             )
-            py_files = list(filter(lambda x: x.name.endswith(target_py_files), files))
+            py_files = list(
+                filter(lambda x: x.name.endswith(target_py_files), files)
+            )
             py_uncommented = list()
             for file in py_files:
                 with open(file, "r") as f:
                     lines = f.read().splitlines()
                 lines = filter(lambda x: len(x) > 0, lines)
-                py_uncommented.append(((list(filter(lambda x: x.lstrip()[0] not in ["#"], lines))), file))
-            self.uncommented = dict()
+                py_uncommented.append(
+                    (
+                        (list(filter(lambda x: x.lstrip()[0] not in ["#"], lines))),
+                        file,
+                    )
+                )
+            uncommented = dict()
             for lines, file in py_uncommented:
                 for l in lines:
-                    self.uncommented[l] = file
+                    uncommented[l] = file
         else:
-            self.uncommented = dict()
-        servers = subprocess.run(["jupyter", "server", "list"], capture_output=True)
-        if servers.returncode == 0:
-            self.servers = servers.stderr.decode().splitlines()[1:]
-        else:
-            self.servers = list()
+            uncommented = False
+        return uncommented
 
+    def _get_servers(self):
+        servers = self.run_command(["jupyter", "server", "list"])
+        if servers.returncode == 0:
+            servers = servers.stderr.decode().splitlines()[1:]
+        else:
+            servers = False
+
+        return servers
+
+    def run_command(self, command):
+        try:
+            val = subprocess.run(command, capture_output=True)
+        except FileNotFoundError:
+            val = subprocess.CompletedProcess(args=command, returncode=1)
+        return val
 
     def get_findings(self):
-        return (
-            self.check_pyconfig_historymod()
-            + self.check_pyconfig_codeexec()
-            + self.check_pyconfig_securitysettings()
-            + self.check_ipython_startup()
-            + self.check_for_https()
-            + self.check_for_token()
-            + self.check_for_silent_history()
-            + self.check_for_localhost()
-        )
+        findings = list()
+        if self.locations:
+            findings.append(self.check_ipython_startup())
+            findings.append(self.check_for_silent_history())
+        if self.servers:
+            findings.append(self.check_for_token())
+            findings.append(self.check_for_https())
+            findings.append(self.check_for_localhost())
+        if self.uncommented:
+            findings.append(self.check_pyconfig_historymod())
+            findings.append(self.check_pyconfig_codeexec())
+            findings.append(self.check_pyconfig_securitysettings())
+        findings = list(itertools.chain(*findings))
+        return findings
+
 
     def check_ipython_startup(self):
         category = "Code Execution"
@@ -65,7 +98,7 @@ class Rules:
         remediation = "Ensure the contents of these files are not malicious.\
         https://ipython.org/ipython-doc/1/config/overview.html#startup-files"
         files = list(Path(self.locations).rglob("*"))
-        startup_files = [(os.listdir(f), f) for f in files if "startup" in f.name]
+        startup_files = [(os.listdir(f), f) for f in files if "startup" in f.name and f.is_dir()]
         res = dict()
         for py_files, dir in startup_files:
             py_files = list(filter(lambda x: x != "README", py_files))
@@ -80,7 +113,7 @@ class Rules:
                 source_details=details,
                 remediation=remediation,
             )
-            for file,path in res.items()
+            for file, path in res.items()
         ]
 
     def check_for_token(self):
@@ -149,6 +182,7 @@ class Rules:
                 "SELECT * FROM history WHERE source LIKE '%execute_interactive%code%silent%=%True%'"
             )
             return len(res.fetchall()) > 0
+
         files = list(Path(self.locations).rglob("*"))
         dbs = [f for f in files if f.name == "history.sqlite"]
         dbs = list(filter(_db_contains_silent, dbs))
@@ -156,7 +190,7 @@ class Rules:
             Finding(
                 category=category,
                 source_text=f,
-                source_doc='',
+                source_doc="",
                 source_details=details,
                 remediation=remediation,
             )
@@ -220,9 +254,8 @@ class Rules:
                 source_details=details,
                 remediation=remediation,
             )
-            for line,path in findings
+            for line, path in findings
         ]
-
 
     def check_pyconfig_historymod(self):
         category = "Nonstandard Configuration"
@@ -231,7 +264,7 @@ class Rules:
         remediation = "Ensure these configuration values are intentional. If you don't recognize them, alert your incident response team."
         findings = [
             (line, path)
-            for line,path in self.uncommented.items()
+            for line, path in self.uncommented.items()
             if line.startswith(
                 (
                     "c.InteractiveShell.history_length",
@@ -258,9 +291,8 @@ class Rules:
                 source_details=details,
                 remediation=remediation,
             )
-            for line,path in findings
+            for line, path in findings
         ]
-
 
     def check_pyconfig_securitysettings(self):
         category = "Nonstandard Configuration"
@@ -268,8 +300,8 @@ class Rules:
              Threat actors may use these to circumvent secure defaults."
         remediation = "Ensure these configuration values are intentional. If you don't recognize them, alert your incident response team."
         findings = [
-            (line,path)
-            for line,path in self.uncommented.items()
+            (line, path)
+            for line, path in self.uncommented.items()
             if line.startswith(
                 (
                     "c.JupyterApp.answer_yes",
@@ -316,5 +348,5 @@ class Rules:
                 source_details=details,
                 remediation=remediation,
             )
-            for line,path in findings
+            for line, path in findings
         ]
