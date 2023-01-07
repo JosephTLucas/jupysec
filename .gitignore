@@ -1,6 +1,6 @@
 # Project specific
 jupysec_extension/jupysec_extension/labextension/static/
-jupysec_extension/jupysec_extension/public/*html
+jupysec_extension/jupysec_extension/public/*.html
 
 # Logs
 logs
