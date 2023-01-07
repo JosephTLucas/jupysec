@@ -1,17 +1,28 @@
 [build-system]
-requires = ["jupyter_packaging~=0.10,<2", "jupyterlab~=3.1"]
-build-backend = "jupyter_packaging.build_api"
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
-[tool.jupyter-packaging.options]
-skip-if-exists = ["jupysec/labextension/static/style.js"]
-ensured-targets = ["jupysec/labextension/static/style.js", "jupysec/labextension/package.json"]
+[tool.setuptools]
+packages = ["jupysec"]
 
-[tool.jupyter-packaging.builder]
-factory = "jupyter_packaging.npm_builder"
+[project]
+name = "jupysec"
+version = "0.1.13"
+authors = [
+  { name="Joe Lucas", email="joe@joetl.com" },
+]
+description = "Jupyter Security Utilities"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 
-[tool.jupyter-packaging.build-args]
-build_cmd = "build:prod"
-npm = ["jlpm"]
+[project.urls]
+"Homepage" = "https://github.com/JosephTLucas/jupysec"
+"Bug Tracker" = "https://github.com/JosephTLucas/jupysec/issues"
 
-[tool.check-manifest]
-ignore = ["jupysec/labextension/**", "yarn.lock", ".*", "package-lock.json"]
+[project.optional-dependencies]
+jupyterlab = ["jupysec_extension"]
