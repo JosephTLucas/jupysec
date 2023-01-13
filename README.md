@@ -8,7 +8,7 @@ Security utilities for Jupyter environments. This set of rules and JupyerLab ext
 
 ## Function
 
-![demo](demo.gif)
+![demo](demo2.gif)
 
 Run the extension to generate an HTML report of the security configuration of your Jupyter instance and other Jupyter instances on your host.
 
