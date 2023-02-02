@@ -7,11 +7,20 @@ from jupysec.finding import Finding
 
 
 class Rules:
-    def __init__(self):
+    def __init__(self, locations = list(), uncommented = dict(), servers = list()):
         """Makes subprocess calls to Jupyter CLI functions to collect data on paths and file contents"""
-        self.locations = self._get_locations()
-        self.uncommented = self._get_uncommented()
-        self.servers = self._get_servers()
+        if not locations:
+            self.locations = self._get_locations()
+        else:
+            self.locations = locations
+        if not uncommented:
+            self.uncommented = self._get_uncommented()
+        else:
+            self.uncommented = uncommented
+        if not servers:
+            self.servers = self._get_servers()
+        else:
+            self.servers = servers
 
     def _get_locations(self):
         """Gets the path to the ipython directory"""
@@ -68,9 +77,17 @@ class Rules:
         if servers.returncode == 0:
             servers = servers.stderr.decode().splitlines()[1:]
         else:
-            servers = False
-
-        return servers
+            servers = list()
+        
+        notebooks = self._run_command(["jupyter", "notebook", "list"])
+        if notebooks.returncode == 0:
+            notebooks = notebooks.stderr.decode().splitlines()[1:]
+            servers += notebooks
+        
+        if len(servers) == 0:
+            return False
+        else:
+            return servers
 
     def _run_command(self, command):
         try:
