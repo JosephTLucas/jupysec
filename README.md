@@ -4,7 +4,7 @@
 
 _JupyterLab Security Utilities_
 
-Security utilities for Jupyter environments. This set of rules and JupyerLab extension evaluates the security posture of the environment by comparing configuration values with best practices.
+Security utilities for Jupyter environments. This set of rules and JupyerLab extension evaluates the security posture of the environment by comparing configuration values with best practices. Read more [here](https://developer.nvidia.com/blog/evaluating-the-security-of-jupyter-environments/).
 
 ## Function
 
