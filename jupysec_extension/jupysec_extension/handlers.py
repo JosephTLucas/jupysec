@@ -8,11 +8,13 @@ from jinja2 import Environment, FileSystemLoader
 
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
+from jupyter_server.base.handlers import JupyterHandler
 
 import tornado
 from tornado.web import StaticFileHandler
 
 from jupysec.rules import Rules
+import pickle
 
 
 class FileHandler():
@@ -32,6 +34,13 @@ class FileHandler():
         with open(f"{self.out_dir}/{out}", "w") as f:
             f.write(results_template.render(content))
 
+def is_jsonable(x):
+    try:
+        json.dumps(x)
+        return True
+    except:
+        return False
+
 
 class RouteHandler(APIHandler):
     # The following decorator should be present on all verb methods (head, get, post,
@@ -41,17 +50,29 @@ class RouteHandler(APIHandler):
     def get(self):
         for filename in Path("jupysec_extension/public/").glob("*.html"):
             filename.unlink()
-        findings = Rules().get_findings()
+        r = Rules(config=config)
+        findings = r.get_findings()
         f = FileHandler()
         for finding in findings:
             f.write_to_template({"finding": finding, "time": str(time.time())}, "finding.html", f"{finding.uuid}.html")
-        f.write_to_template({"findings": findings, "time": str(time.time())}, "index.html", "score.html")
+        f.write_to_template({"config": r.running_config.items(), "findings": findings, "time": str(time.time())}, "index.html", "score.html")
+        '''
+        # dumping the config to a file for debugging
+        keys = list()
+        for k,v in config.items():
+            if is_jsonable(v):
+                keys.append(k)
+        with open("config.json", "w") as f:
+            json.dump({key: value for (key, value) in config.items() if key in keys}, f)
+        '''
         self.finish(json.dumps({"data": "complete"}))
 
 
 def setup_handlers(web_app, url_path):
     host_pattern = ".*$"
     base_url = web_app.settings["base_url"]
+    global config
+    config = web_app.settings
 
     # Prepend the base_url so that it works in a JupyterHub setting
     route_pattern = url_path_join(base_url, url_path, "scorecard_update")

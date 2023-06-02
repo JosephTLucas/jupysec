@@ -6,6 +6,10 @@
     <link rel="stylesheet" type="text/css" href="score.css">
   </head>
     <body>
+        <h1>Running Configuration</h1>
+        {% for key, value in config %}
+        <p>{{key}} : {{value}}</p>
+        {% endfor %}
         <h1>Findings</h1>
         <table class="styled-table">
           <tr>

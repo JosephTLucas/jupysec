@@ -7,7 +7,7 @@ from jupysec.finding import Finding
 
 
 class Rules:
-    def __init__(self, locations = list(), uncommented = dict(), servers = list()):
+    def __init__(self, locations = list(), uncommented = dict(), servers = list(), config = dict()):
         """Makes subprocess calls to Jupyter CLI functions to collect data on paths and file contents"""
         if not locations:
             self.locations = self._get_locations()
@@ -21,6 +21,33 @@ class Rules:
             self.servers = self._get_servers()
         else:
             self.servers = servers
+        if config:
+            self.running_config = self._parse_config(config)
+        else:
+            self.running_config = dict()
+
+    def _parse_config(self, config):
+        running_config = dict()
+        running_config['authorizer'] = config['authorizer'].__class__.__name__
+        running_config['identity_provider'] = config['identity_provider'].__class__.__name__
+        running_config['xsrf_cookies'] = config['xsrf_cookies']
+        running_config['disable_check_xsrf'] = config['disable_check_xsrf']
+        running_config['allow_remote_access'] = config['allow_remote_access']
+        running_config['local_hostnames'] = config['local_hostnames']
+        running_config['disable_check_xsrf'] = config['disable_check_xsrf']
+        running_config['extra_services'] = config['extra_services']
+        running_config['started'] = config['started']
+        running_config['allow_password_change'] = config['allow_password_change']
+        running_config['allow_credentials'] = config['allow_credentials']
+        running_config['autoreload'] = config['autoreload']
+        running_config['cookie_options'] = config['cookie_options']
+        running_config['xsrf_cookie_kwargs'] = config['xsrf_cookie_kwargs']
+        running_config['allow_hidden_files'] = config['page_config_data']['allow_hidden_files']
+        running_config['terminals_available'] = config['terminals_available']
+        running_config['collaborative'] = config['lab_config']['collaborative']
+        return running_config
+
+
 
     def _get_locations(self):
         """Gets the path to the ipython directory"""
