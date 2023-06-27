@@ -75,6 +75,7 @@ class Rules:
             files = list(itertools.chain(*files))
             target_py_files = (
                 "jupyter_server_config.py",
+                "jupyter_lab_config.py",
                 "jupyter_notebook_config.py",
                 "ipython_config.py",
             )
