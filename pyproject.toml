@@ -1,28 +1,72 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=68.0", "setuptools-scm>=8.0"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-packages = ["jupysec"]
 
 [project]
 name = "jupysec"
-version = "0.1.15"
-authors = [
-  { name="Joe Lucas", email="joe@joetl.com" },
-]
-description = "Jupyter Security Utilities"
+version = "0.2.0"
+description = "Security assessment tool for JupyterHub deployments"
 readme = "README.md"
-requires-python = ">=3.7"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+license = {text = "BSD-3-Clause"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Joe Lucas"},
 ]
-
-[project.urls]
-"Homepage" = "https://github.com/JosephTLucas/jupysec"
-"Bug Tracker" = "https://github.com/JosephTLucas/jupysec/issues"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+]
+dependencies = [
+    "typer>=0.9",
+    "httpx>=0.27",
+    "websockets>=12.0",
+    "rich>=13.0",
+    "pydantic>=2.0",
+    "cryptography>=42.0",
+    "jinja2>=3.1",
+    "packaging>=23.0",
+]
 
 [project.optional-dependencies]
-jupyterlab = ["jupysec_extension"]
+kubernetes = ["kubernetes>=29.0"]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+    "mypy>=1.10",
+]
+all = ["jupysec[kubernetes,dev]"]
+
+[project.scripts]
+jupysec = "jupysec.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/JosephTLucas/jupysec"
+Repository = "https://github.com/JosephTLucas/jupysec"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
